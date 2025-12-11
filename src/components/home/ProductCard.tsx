@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Product } from "@/data/mockProducts";
 import { RatingDiamond, SparkleIcon } from "@/components/icons/DiamondIcon";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,7 @@ interface ProductCardProps {
 }
 
 export const ProductCard = ({ product, className, style }: ProductCardProps) => {
+  const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -40,10 +42,15 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
     return diamonds;
   };
 
+  const handleCardClick = () => {
+    navigate(`/product/${product.id}`);
+  };
+
   return (
     <div
+      onClick={handleCardClick}
       className={cn(
-        "group relative bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-card transition-all duration-300",
+        "group relative bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-card transition-all duration-300 cursor-pointer",
         className
       )}
       style={style}
