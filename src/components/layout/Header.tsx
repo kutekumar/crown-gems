@@ -3,37 +3,49 @@ import { Search, Heart, User, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GemIcon } from "@/components/icons/DiamondIcon";
 import { cn } from "@/lib/utils";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+
+const navLinks = [
+  { name: "Shop", path: "/shop" },
+  { name: "Collections", path: "/collections" },
+  { name: "Sellers", path: "/sellers" },
+  { name: "About", path: "/about" },
+];
 
 export const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
       <div className="container max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <GemIcon className="w-6 h-6 text-champagne" />
             <span className="font-serif text-xl font-semibold tracking-tight">
               Gemora
             </span>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#" className="text-sm font-medium text-foreground/80 hover:text-champagne transition-colors">
-              Shop
-            </a>
-            <a href="#" className="text-sm font-medium text-foreground/80 hover:text-champagne transition-colors">
-              Collections
-            </a>
-            <a href="#" className="text-sm font-medium text-foreground/80 hover:text-champagne transition-colors">
-              Sellers
-            </a>
-            <a href="#" className="text-sm font-medium text-foreground/80 hover:text-champagne transition-colors">
-              About
-            </a>
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.path}
+                className={cn(
+                  "text-sm font-medium transition-colors",
+                  location.pathname === link.path
+                    ? "text-champagne"
+                    : "text-foreground/80 hover:text-champagne"
+                )}
+              >
+                {link.name}
+              </Link>
+            ))}
           </nav>
 
           {/* Actions */}
@@ -46,10 +58,10 @@ export const Header = () => {
             >
               <Search className="w-5 h-5" />
             </Button>
-            <Button variant="icon" size="icon">
+            <Button variant="icon" size="icon" onClick={() => navigate("/saved")}>
               <Heart className="w-5 h-5" />
             </Button>
-            <Button variant="icon" size="icon" className="hidden sm:flex">
+            <Button variant="icon" size="icon" className="hidden sm:flex" onClick={() => navigate("/profile")}>
               <User className="w-5 h-5" />
             </Button>
             <Button
@@ -76,6 +88,7 @@ export const Header = () => {
               type="text"
               placeholder="Search for jewelry, gemstones, sellers..."
               className="w-full h-11 pl-11 pr-4 bg-secondary rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-champagne/30 transition-all"
+              onFocus={() => navigate("/search")}
             />
           </div>
         </div>
@@ -88,18 +101,21 @@ export const Header = () => {
           )}
         >
           <nav className="flex flex-col gap-2">
-            <a href="#" className="py-3 px-4 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-              Shop
-            </a>
-            <a href="#" className="py-3 px-4 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-              Collections
-            </a>
-            <a href="#" className="py-3 px-4 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-              Sellers
-            </a>
-            <a href="#" className="py-3 px-4 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
-              About
-            </a>
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={cn(
+                  "py-3 px-4 rounded-lg text-sm font-medium transition-colors",
+                  location.pathname === link.path
+                    ? "bg-champagne/10 text-champagne"
+                    : "hover:bg-secondary"
+                )}
+              >
+                {link.name}
+              </Link>
+            ))}
           </nav>
         </div>
       </div>
