@@ -11,11 +11,13 @@ import {
   Package,
   MessageCircle,
   Star,
+  Store,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Button } from "@/components/ui/button";
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
+import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
   {
@@ -54,6 +56,12 @@ const settingsItems = [
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { user, role, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -66,21 +74,38 @@ export default function Profile() {
               <User className="w-10 h-10 text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <h1 className="font-serif text-xl font-medium">Welcome Back</h1>
+              <h1 className="font-serif text-xl font-medium">
+                {user ? "Welcome Back" : "Welcome to Gemora"}
+              </h1>
               <p className="text-muted-foreground text-sm">
-                Sign in to access your account
+                {user ? user.email : "Sign in to access your account"}
               </p>
+              {role && (
+                <span className="inline-flex items-center gap-1 mt-1 text-xs bg-champagne/10 text-champagne px-2 py-0.5 rounded-full capitalize">
+                  {role === "seller" ? <Store className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                  {role}
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="flex gap-3 mt-6">
-            <Button variant="champagne" className="flex-1">
-              Sign In
+          {!user && (
+            <div className="flex gap-3 mt-6">
+              <Button variant="champagne" className="flex-1" onClick={() => navigate("/auth")}>
+                Sign In
+              </Button>
+              <Button variant="champagne-outline" className="flex-1" onClick={() => navigate("/auth?mode=signup")}>
+                Create Account
+              </Button>
+            </div>
+          )}
+          
+          {role === "seller" && (
+            <Button variant="champagne" className="w-full mt-6" onClick={() => navigate("/seller/dashboard")}>
+              <Store className="w-4 h-4 mr-2" />
+              Go to Seller Dashboard
             </Button>
-            <Button variant="champagne-outline" className="flex-1">
-              Create Account
-            </Button>
-          </div>
+          )}
         </div>
 
         {/* Stats (for demo - would show real data when logged in) */}
@@ -173,10 +198,15 @@ export default function Profile() {
           </div>
 
           {/* Sign Out */}
-          <button className="flex items-center gap-3 w-full p-4 text-destructive hover:bg-destructive/5 rounded-xl transition-colors">
-            <LogOut className="w-5 h-5" />
-            <span>Sign Out</span>
-          </button>
+          {user && (
+            <button 
+              onClick={handleSignOut}
+              className="flex items-center gap-3 w-full p-4 text-destructive hover:bg-destructive/5 rounded-xl transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Sign Out</span>
+            </button>
+          )}
         </div>
 
         {/* App Version */}

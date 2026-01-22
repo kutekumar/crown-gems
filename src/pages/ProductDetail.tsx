@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Heart, Share2, MessageCircle, Shield, Truck, RotateCcw, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
+import { ArrowLeft, Heart, Share2, MessageCircle, Shield, Truck, RotateCcw, ChevronLeft, ChevronRight, X, ZoomIn, Lock } from "lucide-react";
 import { products, Product } from "@/data/mockProducts";
 import { RatingDiamond, SparkleIcon } from "@/components/icons/DiamondIcon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 // Mock gallery images - in real app these would come from the product data
 const getGalleryImages = (product: Product) => [
@@ -18,11 +20,21 @@ const getGalleryImages = (product: Product) => [
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
+
+  const handleContactSeller = () => {
+    if (!user) {
+      toast.info("Please sign in to contact sellers");
+      navigate("/auth");
+      return;
+    }
+    toast.success("Contact feature coming soon!");
+  };
 
   const product = products.find((p) => p.id === id);
   const galleryImages = product ? getGalleryImages(product) : [];
@@ -294,9 +306,18 @@ export default function ProductDetail() {
                   </span>
                 </div>
               </div>
-              <Button variant="champagne-outline" size="sm">
-                <MessageCircle className="w-4 h-4 mr-1.5" />
-                Contact
+              <Button variant="champagne-outline" size="sm" onClick={handleContactSeller}>
+                {user ? (
+                  <>
+                    <MessageCircle className="w-4 h-4 mr-1.5" />
+                    Contact
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 mr-1.5" />
+                    Sign in to Contact
+                  </>
+                )}
               </Button>
             </div>
 
@@ -422,9 +443,18 @@ export default function ProductDetail() {
               />
               Save
             </Button>
-            <Button variant="champagne" size="lg" className="flex-[2]">
-              <MessageCircle className="w-5 h-5 mr-2" />
-              Contact Seller
+            <Button variant="champagne" size="lg" className="flex-[2]" onClick={handleContactSeller}>
+              {user ? (
+                <>
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Contact Seller
+                </>
+              ) : (
+                <>
+                  <Lock className="w-5 h-5 mr-2" />
+                  Sign in to Contact
+                </>
+              )}
             </Button>
           </div>
         </div>
