@@ -3,9 +3,11 @@ import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Button } from "@/components/ui/button";
 import { RatingDiamond } from "@/components/icons/DiamondIcon";
-import { MapPin, Shield, Star, ChevronRight, Search } from "lucide-react";
+import { MapPin, Shield, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { SellerApplicationForm } from "@/components/seller/SellerApplicationForm";
 
 import product1 from "@/assets/product-1.jpg";
 import product2 from "@/assets/product-2.jpg";
@@ -99,8 +101,18 @@ const specialtyFilters = ["All", "Diamonds", "Sapphires", "Rubies", "Emeralds", 
 
 const Sellers = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
+
+  const handleApplyNow = () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    setShowApplicationForm(true);
+  };
 
   const filteredSellers = mockSellers.filter(seller => {
     const matchesFilter = activeFilter === "All" || seller.specialties.includes(activeFilter);
@@ -268,13 +280,18 @@ const Sellers = () => {
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             Join our marketplace and showcase your jewelry to buyers worldwide
           </p>
-          <Button variant="champagne">
+          <Button variant="champagne" onClick={handleApplyNow}>
             Apply Now
           </Button>
         </div>
       </main>
 
       <BottomNav />
+
+      {/* Application Form Modal */}
+      {showApplicationForm && (
+        <SellerApplicationForm onClose={() => setShowApplicationForm(false)} />
+      )}
     </div>
   );
 };

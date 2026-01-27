@@ -1,7 +1,13 @@
 import { categories } from "@/data/mockProducts";
 import { ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const CategorySection = () => {
+  const navigate = useNavigate();
+
+  const handleCategoryClick = (categoryId: string) => {
+    navigate(`/shop?category=${categoryId}`);
+  };
   return (
     <section className="py-10 md:py-16">
       <div className="container max-w-7xl mx-auto px-4">
@@ -26,6 +32,7 @@ export const CategorySection = () => {
           {categories.map((category, index) => (
             <button
               key={category.id}
+              onClick={() => handleCategoryClick(category.id)}
               className="group relative overflow-hidden rounded-2xl aspect-[4/5] animate-fade-up opacity-0"
               style={{ animationDelay: `${index * 100}ms` }}
             >

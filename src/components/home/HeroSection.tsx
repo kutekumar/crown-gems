@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { SparkleIcon } from "@/components/icons/DiamondIcon";
 import heroImage from "@/assets/hero-ring.jpg";
+import { useNavigate } from "react-router-dom";
 
 export const HeroSection = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative overflow-hidden bg-gradient-hero">
       <div className="container max-w-7xl mx-auto px-4 py-8 md:py-16">
@@ -27,10 +29,10 @@ export const HeroSection = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start animate-fade-up opacity-0 delay-400">
-              <Button variant="champagne" size="lg">
+              <Button variant="champagne" size="lg" onClick={() => navigate("/shop")}>
                 Explore Collection
               </Button>
-              <Button variant="champagne-outline" size="lg">
+              <Button variant="champagne-outline" size="lg" onClick={() => navigate("/sellers")}>
                 Meet Our Sellers
               </Button>
             </div>
