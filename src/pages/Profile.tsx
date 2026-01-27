@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Star,
   Store,
+  Shield,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -82,7 +83,7 @@ export default function Profile() {
               </p>
               {role && (
                 <span className="inline-flex items-center gap-1 mt-1 text-xs bg-champagne/10 text-champagne px-2 py-0.5 rounded-full capitalize">
-                  {role === "seller" ? <Store className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                  {role === "seller" ? <Store className="w-3 h-3" /> : role === "admin" ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
                   {role}
                 </span>
               )}
@@ -104,6 +105,13 @@ export default function Profile() {
             <Button variant="champagne" className="w-full mt-6" onClick={() => navigate("/seller/dashboard")}>
               <Store className="w-4 h-4 mr-2" />
               Go to Seller Dashboard
+            </Button>
+          )}
+          
+          {role === "admin" && (
+            <Button variant="champagne" className="w-full mt-6" onClick={() => navigate("/admin")}>
+              <Shield className="w-4 h-4 mr-2" />
+              Go to Admin Dashboard
             </Button>
           )}
         </div>

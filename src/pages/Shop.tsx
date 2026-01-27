@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { ProductCard } from "@/components/home/ProductCard";
@@ -30,6 +31,9 @@ const sortOptions = [
 ];
 
 const Shop = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryFromUrl = searchParams.get("category");
+  
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeStone, setActiveStone] = useState<string | null>(null);
   const [activeStyle, setActiveStyle] = useState<string | null>(null);
@@ -37,10 +41,40 @@ const Shop = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
 
+  // Handle URL category parameter
+  useEffect(() => {
+    if (categoryFromUrl) {
+      const matchedCategory = categories.find(
+        c => c.id.toLowerCase() === categoryFromUrl.toLowerCase()
+      );
+      if (matchedCategory) {
+        setActiveCategory(matchedCategory.name);
+      }
+    }
+  }, [categoryFromUrl]);
+
+  // Update URL when category changes
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    if (category === "All") {
+      searchParams.delete("category");
+    } else {
+      const cat = categories.find(c => c.name === category);
+      if (cat) {
+        searchParams.set("category", cat.id);
+      }
+    }
+    setSearchParams(searchParams);
+  };
+
   const allCategories = ["All", ...categories.map(c => c.name)];
 
   const filteredProducts = products.filter(product => {
-    if (activeCategory !== "All" && product.category !== activeCategory) return false;
+    // Match category by name (categories in products use lowercase like "rings", "necklaces")
+    if (activeCategory !== "All") {
+      const categoryObj = categories.find(c => c.name === activeCategory);
+      if (categoryObj && product.category !== categoryObj.id) return false;
+    }
     if (activeStone && product.stone !== activeStone) return false;
     if (activeStyle && product.style !== activeStyle) return false;
     if (activePriceRange !== "all") {
@@ -65,7 +99,7 @@ const Shop = () => {
   });
 
   const clearFilters = () => {
-    setActiveCategory("All");
+    handleCategoryChange("All");
     setActiveStone(null);
     setActiveStyle(null);
     setActivePriceRange("all");
@@ -114,7 +148,7 @@ const Shop = () => {
                       {allCategories.map((category) => (
                         <button
                           key={category}
-                          onClick={() => setActiveCategory(category)}
+                          onClick={() => handleCategoryChange(category)}
                           className={cn(
                             "px-4 py-2 rounded-full text-sm transition-all",
                             activeCategory === category
@@ -205,7 +239,7 @@ const Shop = () => {
               {allCategories.map((category) => (
                 <button
                   key={category}
-                  onClick={() => setActiveCategory(category)}
+                  onClick={() => handleCategoryChange(category)}
                   className={cn(
                     "px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all",
                     activeCategory === category

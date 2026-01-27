@@ -167,6 +167,60 @@ export type Database = {
           },
         ]
       }
+      seller_applications: {
+        Row: {
+          admin_notes: string | null
+          business_name: string
+          created_at: string
+          description: string | null
+          email: string | null
+          id: string
+          location: string | null
+          logo_url: string | null
+          phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          specialties: string[] | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          business_name: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          location?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          specialties?: string[] | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          business_name?: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          location?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          specialties?: string[] | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sellers: {
         Row: {
           business_name: string
