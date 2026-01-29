@@ -4,6 +4,7 @@ import { Product } from "@/data/mockProducts";
 import { RatingDiamond, SparkleIcon } from "@/components/icons/DiamondIcon";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useSavedProducts } from "@/hooks/useSavedProducts";
 
 interface ProductCardProps {
   product: Product;
@@ -13,8 +14,11 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product, className, style }: ProductCardProps) => {
   const navigate = useNavigate();
-  const [isLiked, setIsLiked] = useState(false);
+  const { isSaved, toggleSave } = useSavedProducts();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
+
+  const isProductSaved = isSaved(product.id);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -44,6 +48,14 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
 
   const handleCardClick = () => {
     navigate(`/product/${product.id}`);
+  };
+
+  const handleToggleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isToggling) return;
+    setIsToggling(true);
+    await toggleSave(product.id);
+    setIsToggling(false);
   };
 
   return (
@@ -87,16 +99,14 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
 
         {/* Like Button */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsLiked(!isLiked);
-          }}
-          className="absolute top-3 right-3 w-9 h-9 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-soft transition-all hover:scale-110 active:scale-95"
+          onClick={handleToggleSave}
+          disabled={isToggling}
+          className="absolute top-3 right-3 w-9 h-9 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-soft transition-all hover:scale-110 active:scale-95 disabled:opacity-50"
         >
           <Heart
             className={cn(
               "w-4 h-4 transition-colors",
-              isLiked ? "fill-rose-gold text-rose-gold" : "text-charcoal-soft"
+              isProductSaved ? "fill-rose-gold text-rose-gold" : "text-charcoal-soft"
             )}
           />
         </button>

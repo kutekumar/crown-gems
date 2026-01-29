@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSavedProducts } from "@/hooks/useSavedProducts";
+import { useMessages } from "@/hooks/useMessages";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Mock gallery images - in real app these would come from the product data
@@ -21,27 +24,64 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isLiked, setIsLiked] = useState(false);
+  const { isSaved, toggleSave } = useSavedProducts();
+  const { startConversation } = useMessages();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
+  const [isTogglingSave, setIsTogglingSave] = useState(false);
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
-  const handleContactSeller = () => {
+  const product = products.find((p) => p.id === id);
+  const galleryImages = product ? getGalleryImages(product) : [];
+  const isProductSaved = product ? isSaved(product.id) : false;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const handleToggleSave = async () => {
+    if (!product || isTogglingSave) return;
+    setIsTogglingSave(true);
+    await toggleSave(product.id);
+    setIsTogglingSave(false);
+  };
+
+  const handleContactSeller = async () => {
     if (!user) {
       toast.info("Please sign in to contact sellers");
       navigate("/auth");
       return;
     }
-    toast.success("Contact feature coming soon!");
+
+    if (!product) return;
+
+    setIsStartingChat(true);
+    try {
+      // Find the seller in the database by matching business name
+      const { data: seller } = await supabase
+        .from("sellers")
+        .select("id")
+        .eq("business_name", product.seller.name)
+        .maybeSingle();
+
+      if (!seller) {
+        toast.error("Seller not found. This may be a demo product.");
+        setIsStartingChat(false);
+        return;
+      }
+
+      const conversationId = await startConversation(seller.id, product.id);
+      if (conversationId) {
+        navigate("/messages");
+      }
+    } catch (error) {
+      console.error("Error starting conversation:", error);
+      toast.error("Failed to start conversation");
+    }
+    setIsStartingChat(false);
   };
-
-  const product = products.find((p) => p.id === id);
-  const galleryImages = product ? getGalleryImages(product) : [];
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
 
   if (!product) {
     return (
@@ -194,13 +234,14 @@ export default function ProductDetail() {
             </button>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setIsLiked(!isLiked)}
-                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
+                onClick={handleToggleSave}
+                disabled={isTogglingSave}
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-50"
               >
                 <Heart
                   className={cn(
                     "w-5 h-5 transition-colors",
-                    isLiked ? "fill-rose-gold text-rose-gold" : "text-foreground"
+                    isProductSaved ? "fill-rose-gold text-rose-gold" : "text-foreground"
                   )}
                 />
               </button>
@@ -306,11 +347,16 @@ export default function ProductDetail() {
                   </span>
                 </div>
               </div>
-              <Button variant="champagne-outline" size="sm" onClick={handleContactSeller}>
+              <Button 
+                variant="champagne-outline" 
+                size="sm" 
+                onClick={handleContactSeller}
+                disabled={isStartingChat}
+              >
                 {user ? (
                   <>
                     <MessageCircle className="w-4 h-4 mr-1.5" />
-                    Contact
+                    {isStartingChat ? "Opening..." : "Contact"}
                   </>
                 ) : (
                   <>
@@ -433,21 +479,28 @@ export default function ProductDetail() {
               variant="champagne-outline"
               size="lg"
               className="flex-1"
-              onClick={() => setIsLiked(!isLiked)}
+              onClick={handleToggleSave}
+              disabled={isTogglingSave}
             >
               <Heart
                 className={cn(
                   "w-5 h-5 mr-2",
-                  isLiked && "fill-rose-gold text-rose-gold"
+                  isProductSaved && "fill-rose-gold text-rose-gold"
                 )}
               />
-              Save
+              {isProductSaved ? "Saved" : "Save"}
             </Button>
-            <Button variant="champagne" size="lg" className="flex-[2]" onClick={handleContactSeller}>
+            <Button 
+              variant="champagne" 
+              size="lg" 
+              className="flex-[2]" 
+              onClick={handleContactSeller}
+              disabled={isStartingChat}
+            >
               {user ? (
                 <>
                   <MessageCircle className="w-5 h-5 mr-2" />
-                  Contact Seller
+                  {isStartingChat ? "Opening Chat..." : "Contact Seller"}
                 </>
               ) : (
                 <>
