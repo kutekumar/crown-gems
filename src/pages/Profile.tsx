@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User,
@@ -19,34 +20,8 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Button } from "@/components/ui/button";
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
 import { useAuth } from "@/contexts/AuthContext";
-
-const menuItems = [
-  {
-    icon: Heart,
-    label: "Saved Items",
-    description: "Your favorites",
-    href: "/saved",
-  },
-  {
-    icon: Package,
-    label: "My Orders",
-    description: "Track your purchases",
-    href: "#",
-  },
-  {
-    icon: MessageCircle,
-    label: "Messages",
-    description: "Chat with sellers",
-    href: "#",
-    badge: 3,
-  },
-  {
-    icon: Star,
-    label: "Reviews",
-    description: "Your ratings & reviews",
-    href: "#",
-  },
-];
+import { useSavedProducts } from "@/hooks/useSavedProducts";
+import { useMessages } from "@/hooks/useMessages";
 
 const settingsItems = [
   { icon: Settings, label: "Account Settings", href: "#" },
@@ -58,6 +33,39 @@ const settingsItems = [
 export default function Profile() {
   const navigate = useNavigate();
   const { user, role, signOut } = useAuth();
+  const { savedProductIds } = useSavedProducts();
+  const { getUnreadCount } = useMessages();
+
+  const unreadMessages = getUnreadCount();
+
+  const menuItems = [
+    {
+      icon: Heart,
+      label: "Saved Items",
+      description: "Your favorites",
+      href: "/saved",
+      count: savedProductIds.size,
+    },
+    {
+      icon: Package,
+      label: "My Orders",
+      description: "Track your purchases",
+      href: "#",
+    },
+    {
+      icon: MessageCircle,
+      label: "Messages",
+      description: "Chat with sellers",
+      href: "/messages",
+      badge: unreadMessages,
+    },
+    {
+      icon: Star,
+      label: "Reviews",
+      description: "Your ratings & reviews",
+      href: "#",
+    },
+  ];
 
   const handleSignOut = async () => {
     await signOut();
@@ -116,11 +124,11 @@ export default function Profile() {
           )}
         </div>
 
-        {/* Stats (for demo - would show real data when logged in) */}
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-px bg-border mx-4 rounded-xl overflow-hidden mb-6">
           <div className="bg-card p-4 text-center">
             <span className="block font-serif text-2xl font-semibold text-champagne">
-              0
+              {savedProductIds.size}
             </span>
             <span className="text-xs text-muted-foreground">Saved</span>
           </div>
@@ -156,7 +164,12 @@ export default function Profile() {
                     {item.description}
                   </p>
                 </div>
-                {item.badge && (
+                {item.count !== undefined && item.count > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {item.count}
+                  </span>
+                )}
+                {item.badge !== undefined && item.badge > 0 && (
                   <span className="w-5 h-5 rounded-full bg-rose-gold text-primary-foreground text-xs flex items-center justify-center">
                     {item.badge}
                   </span>
@@ -186,24 +199,27 @@ export default function Profile() {
           </div>
 
           {/* Become a Seller */}
-          <div className="bg-gradient-to-r from-champagne to-rose-gold p-6 rounded-2xl text-primary-foreground">
-            <div className="flex items-center gap-3 mb-3">
-              <DiamondIcon className="w-8 h-8" />
-              <h3 className="font-serif text-lg font-medium">
-                Become a Seller
-              </h3>
+          {role !== "seller" && role !== "admin" && (
+            <div className="bg-gradient-to-r from-champagne to-rose-gold p-6 rounded-2xl text-primary-foreground">
+              <div className="flex items-center gap-3 mb-3">
+                <DiamondIcon className="w-8 h-8" />
+                <h3 className="font-serif text-lg font-medium">
+                  Become a Seller
+                </h3>
+              </div>
+              <p className="text-sm opacity-90 mb-4">
+                Start selling your jewelry pieces to thousands of buyers
+                worldwide.
+              </p>
+              <Button
+                variant="outline"
+                className="bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={() => navigate("/sellers")}
+              >
+                Learn More
+              </Button>
             </div>
-            <p className="text-sm opacity-90 mb-4">
-              Start selling your jewelry pieces to thousands of buyers
-              worldwide.
-            </p>
-            <Button
-              variant="outline"
-              className="bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/20"
-            >
-              Learn More
-            </Button>
-          </div>
+          )}
 
           {/* Sign Out */}
           {user && (

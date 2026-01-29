@@ -67,7 +67,7 @@ export const products: Product[] = [
     stone: "Emerald",
     style: "Classic",
     material: "18K Gold",
-    seller: { name: "Gemstone Atelier", verified: true, rating: 4.9 },
+    seller: { name: "Mingalar Mon", verified: true, rating: 4.9 },
     isFeatured: true,
   },
   {
@@ -104,7 +104,7 @@ export const products: Product[] = [
     stone: "Ruby",
     style: "Classic",
     material: "18K White Gold",
-    seller: { name: "Royal Gems Ltd", verified: true, rating: 4.9 },
+    seller: { name: "Mingalar Mon", verified: true, rating: 4.9 },
   },
   {
     id: "5",
@@ -140,7 +140,7 @@ export const products: Product[] = [
     stone: "Diamond",
     style: "Modern",
     material: "Rose Gold",
-    seller: { name: "Eternal Sparkle", verified: true, rating: 4.9 },
+    seller: { name: "Mingalar Mon", verified: true, rating: 4.9 },
     isNew: true,
     isFeatured: true,
   },
@@ -177,7 +177,7 @@ export const products: Product[] = [
     stone: "Diamond",
     style: "Modern",
     material: "Platinum",
-    seller: { name: "Platinum Elite", verified: true, rating: 5.0 },
+    seller: { name: "Mingalar Mon", verified: true, rating: 5.0 },
     isFeatured: true,
   },
   {

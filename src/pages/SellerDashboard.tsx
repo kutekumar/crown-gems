@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Plus, Package, Settings, BarChart3, LogOut, 
-  ChevronRight, Edit, Trash2, Image, X, Upload
+  ChevronRight, Edit, Trash2, Image, X, Upload, MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useMessages } from "@/hooks/useMessages";
+import { ConversationList } from "@/components/chat/ConversationList";
+import { ChatWindow } from "@/components/chat/ChatWindow";
 import {
   Dialog,
   DialogContent,
@@ -67,7 +70,9 @@ export default function SellerDashboard() {
   const [seller, setSeller] = useState<SellerInfo | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"products" | "settings" | "analytics">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "messages" | "settings">("products");
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const { conversations, getUnreadCount, refresh: refreshMessages } = useMessages();
   
   // Product form state
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -443,6 +448,22 @@ export default function SellerDashboard() {
             Products
           </Button>
           <Button
+            variant={activeTab === "messages" ? "champagne" : "ghost"}
+            onClick={() => {
+              setActiveTab("messages");
+              refreshMessages();
+            }}
+            className="relative"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Messages
+            {getUnreadCount() > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-gold text-primary-foreground text-xs flex items-center justify-center">
+                {getUnreadCount()}
+              </span>
+            )}
+          </Button>
+          <Button
             variant={activeTab === "settings" ? "champagne" : "ghost"}
             onClick={() => setActiveTab("settings")}
           >
@@ -530,6 +551,37 @@ export default function SellerDashboard() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Messages Tab */}
+        {activeTab === "messages" && (
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-card rounded-2xl overflow-hidden shadow-soft md:col-span-1">
+              <div className="p-4 border-b border-border">
+                <h3 className="font-medium">Conversations</h3>
+              </div>
+              <ConversationList
+                conversations={conversations}
+                onSelect={setSelectedConversationId}
+                selectedId={selectedConversationId}
+              />
+            </div>
+            <div className="md:col-span-2">
+              {selectedConversationId ? (
+                <ChatWindow
+                  conversationId={selectedConversationId}
+                  onClose={() => setSelectedConversationId(null)}
+                />
+              ) : (
+                <div className="h-[500px] bg-card rounded-2xl flex flex-col items-center justify-center text-center p-6">
+                  <MessageCircle className="w-12 h-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
+                    Select a conversation to view messages
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
