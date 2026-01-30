@@ -5,6 +5,7 @@ import { RatingDiamond, SparkleIcon } from "@/components/icons/DiamondIcon";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useSavedProducts } from "@/hooks/useSavedProducts";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   product: Product;
@@ -12,13 +13,17 @@ interface ProductCardProps {
   style?: React.CSSProperties;
 }
 
+// Check if string is a valid UUID
+const isUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
 export const ProductCard = ({ product, className, style }: ProductCardProps) => {
   const navigate = useNavigate();
   const { isSaved, toggleSave } = useSavedProducts();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
 
-  const isProductSaved = isSaved(product.id);
+  const canSave = isUUID(product.id);
+  const isProductSaved = canSave ? isSaved(product.id) : false;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -52,6 +57,12 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
 
   const handleToggleSave = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    if (!canSave) {
+      toast.info("Demo product - real products can be saved!");
+      return;
+    }
+    
     if (isToggling) return;
     setIsToggling(true);
     await toggleSave(product.id);
@@ -116,11 +127,11 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
       <div className="p-4">
         {/* Seller Info */}
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground truncate">
             {product.seller.name}
           </span>
           {product.seller.verified && (
-            <span className="w-3.5 h-3.5 bg-champagne rounded-full flex items-center justify-center">
+            <span className="w-3.5 h-3.5 bg-champagne rounded-full flex items-center justify-center flex-shrink-0">
               <svg
                 viewBox="0 0 12 12"
                 className="w-2 h-2 text-primary-foreground"
@@ -133,12 +144,12 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
         </div>
 
         {/* Product Name */}
-        <h3 className="font-serif text-base font-medium mb-2 line-clamp-2 group-hover:text-champagne transition-colors">
+        <h3 className="font-serif text-sm font-medium mb-2 line-clamp-2 group-hover:text-champagne transition-colors">
           {product.name}
         </h3>
 
         {/* Rating */}
-        <div className="flex items-center gap-1 mb-3">
+        <div className="flex items-center gap-1 mb-2">
           <div className="flex items-center gap-0.5">
             {renderRating(product.seller.rating)}
           </div>
@@ -149,22 +160,22 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
 
         {/* Price */}
         <div className="flex items-baseline gap-2">
-          <span className="font-serif text-lg font-semibold">
+          <span className="font-serif text-base font-semibold">
             {formatPrice(product.price)}
           </span>
           {product.originalPrice && (
-            <span className="text-sm text-muted-foreground line-through">
+            <span className="text-xs text-muted-foreground line-through">
               {formatPrice(product.originalPrice)}
             </span>
           )}
         </div>
 
         {/* Tags */}
-        <div className="flex gap-2 mt-3">
-          <span className="px-2 py-0.5 bg-secondary text-xs text-secondary-foreground rounded-md">
+        <div className="flex gap-1.5 mt-2">
+          <span className="px-2 py-0.5 bg-secondary text-[10px] text-secondary-foreground rounded-md">
             {product.stone}
           </span>
-          <span className="px-2 py-0.5 bg-secondary text-xs text-secondary-foreground rounded-md">
+          <span className="px-2 py-0.5 bg-secondary text-[10px] text-secondary-foreground rounded-md">
             {product.style}
           </span>
         </div>

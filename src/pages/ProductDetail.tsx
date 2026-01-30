@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Heart, Share2, MessageCircle, Shield, Truck, RotateCcw, ChevronLeft, ChevronRight, X, ZoomIn, Lock } from "lucide-react";
-import { products, Product } from "@/data/mockProducts";
+import { products as mockProducts, Product } from "@/data/mockProducts";
+import { useProduct } from "@/hooks/useProducts";
 import { RatingDiamond, SparkleIcon } from "@/components/icons/DiamondIcon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,14 +12,7 @@ import { useSavedProducts } from "@/hooks/useSavedProducts";
 import { useMessages } from "@/hooks/useMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-// Mock gallery images - in real app these would come from the product data
-const getGalleryImages = (product: Product) => [
-  product.image,
-  product.image,
-  product.image,
-  product.image,
-];
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -33,8 +27,44 @@ export default function ProductDetail() {
   const [isTogglingSave, setIsTogglingSave] = useState(false);
   const [isStartingChat, setIsStartingChat] = useState(false);
 
-  const product = products.find((p) => p.id === id);
-  const galleryImages = product ? getGalleryImages(product) : [];
+  // Check if id is a UUID (from database) or simple string (from mock)
+  const isUUID = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  
+  // Fetch from database if UUID
+  const { data: dbProduct, isLoading } = useProduct(isUUID ? id! : "");
+  
+  // Get mock product if not UUID
+  const mockProduct = !isUUID ? mockProducts.find((p) => p.id === id) : null;
+
+  // Determine which product to use
+  const product: Product | null = dbProduct ? {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    price: dbProduct.price,
+    image: dbProduct.images[0]?.url || "/placeholder.svg",
+    category: dbProduct.category,
+    stone: dbProduct.stone || "Unknown",
+    style: dbProduct.style || "Classic",
+    material: undefined,
+    seller: {
+      name: dbProduct.seller.business_name,
+      verified: dbProduct.seller.is_verified,
+      rating: dbProduct.seller.rating,
+    },
+    isNew: dbProduct.is_new,
+    isFeatured: dbProduct.is_featured,
+  } : mockProduct || null;
+
+  // Get seller ID for database products
+  const sellerId = dbProduct?.seller.id;
+  
+  // Gallery images
+  const galleryImages = dbProduct 
+    ? dbProduct.images.map(img => img.url)
+    : product 
+      ? [product.image, product.image, product.image, product.image]
+      : [];
+
   const isProductSaved = product ? isSaved(product.id) : false;
 
   useEffect(() => {
@@ -43,6 +73,13 @@ export default function ProductDetail() {
 
   const handleToggleSave = async () => {
     if (!product || isTogglingSave) return;
+    
+    // Only allow saving for database products (with UUID)
+    if (!isUUID) {
+      toast.info("This is a demo product. Sign up as a seller to add real products!");
+      return;
+    }
+    
     setIsTogglingSave(true);
     await toggleSave(product.id);
     setIsTogglingSave(false);
@@ -57,9 +94,25 @@ export default function ProductDetail() {
 
     if (!product) return;
 
+    // For database products, use seller ID directly
+    if (isUUID && sellerId) {
+      setIsStartingChat(true);
+      try {
+        const conversationId = await startConversation(sellerId);
+        if (conversationId) {
+          navigate("/messages");
+        }
+      } catch (error) {
+        console.error("Error starting conversation:", error);
+        toast.error("Failed to start conversation");
+      }
+      setIsStartingChat(false);
+      return;
+    }
+
+    // For mock products, try to find seller by name
     setIsStartingChat(true);
     try {
-      // Find the seller in the database by matching business name
       const { data: seller } = await supabase
         .from("sellers")
         .select("id")
@@ -67,12 +120,12 @@ export default function ProductDetail() {
         .maybeSingle();
 
       if (!seller) {
-        toast.error("Seller not found. This may be a demo product.");
+        toast.info("This is a demo product. The seller isn't registered yet.");
         setIsStartingChat(false);
         return;
       }
 
-      const conversationId = await startConversation(seller.id, product.id);
+      const conversationId = await startConversation(seller.id);
       if (conversationId) {
         navigate("/messages");
       }
@@ -82,6 +135,32 @@ export default function ProductDetail() {
     }
     setIsStartingChat(false);
   };
+
+  // Loading state
+  if (isLoading && isUUID) {
+    return (
+      <div className="min-h-screen bg-background pb-32">
+        <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
+          <div className="flex items-center justify-between h-14 px-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          </div>
+        </header>
+        <main className="pt-14">
+          <Skeleton className="aspect-square w-full" />
+          <div className="px-4 py-6 space-y-4">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-6 w-1/2" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -263,7 +342,7 @@ export default function ProductDetail() {
             onTouchEnd={handleTouchEnd}
           >
             <img
-              src={galleryImages[currentImageIndex]}
+              src={galleryImages[currentImageIndex] || product.image}
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-500"
             />
@@ -361,7 +440,7 @@ export default function ProductDetail() {
                 ) : (
                   <>
                     <Lock className="w-4 h-4 mr-1.5" />
-                    Sign in to Contact
+                    Sign in
                   </>
                 )}
               </Button>
@@ -469,50 +548,40 @@ export default function ProductDetail() {
                 </span>
               </div>
             </div>
+
+            {/* Demo Notice for Mock Products */}
+            {!isUUID && (
+              <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  <strong>Demo Product:</strong> This is a sample product. Real products from verified sellers can be saved and purchased.
+                </p>
+              </div>
+            )}
           </div>
         </main>
 
         {/* Fixed Bottom CTA */}
-        <div className="fixed bottom-16 md:bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-xl border-t border-border safe-area-inset-bottom z-40">
-          <div className="flex gap-3 max-w-lg mx-auto">
-            <Button
-              variant="champagne-outline"
-              size="lg"
-              className="flex-1"
-              onClick={handleToggleSave}
-              disabled={isTogglingSave}
-            >
-              <Heart
-                className={cn(
-                  "w-5 h-5 mr-2",
-                  isProductSaved && "fill-rose-gold text-rose-gold"
-                )}
-              />
-              {isProductSaved ? "Saved" : "Save"}
-            </Button>
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-xl border-t border-border z-30 md:hidden">
+          <div className="flex gap-3">
             <Button 
-              variant="champagne" 
-              size="lg" 
-              className="flex-[2]" 
+              variant="champagne-outline" 
+              className="flex-1" 
               onClick={handleContactSeller}
               disabled={isStartingChat}
             >
-              {user ? (
-                <>
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  {isStartingChat ? "Opening Chat..." : "Contact Seller"}
-                </>
-              ) : (
-                <>
-                  <Lock className="w-5 h-5 mr-2" />
-                  Sign in to Contact
-                </>
-              )}
+              <MessageCircle className="w-4 h-4 mr-2" />
+              {isStartingChat ? "Opening..." : "Message Seller"}
+            </Button>
+            <Button variant="champagne" className="flex-1">
+              Inquire Now
             </Button>
           </div>
         </div>
       </div>
-      <BottomNav />
+
+      <div className="hidden md:block">
+        <BottomNav />
+      </div>
     </>
   );
 }
