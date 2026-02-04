@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { GemIcon } from "@/components/icons/DiamondIcon";
 import { cn } from "@/lib/utils";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import crownGemsLogo from "@/assets/CGLogo.png";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const navLinks = [
   { name: "Shop", path: "/shop" },
@@ -23,10 +25,10 @@ export const Header = () => {
       <div className="container max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <GemIcon className="w-6 h-6 text-champagne" />
-            <span className="font-serif text-xl font-semibold tracking-tight">
-              Gemora
+          <Link to="/" className="flex items-center gap-3">
+            <img src={crownGemsLogo} alt="Crown Gems" className="h-16 w-auto object-contain" />
+            <span className="font-serif text-xl font-semibold tracking-tight self-center">
+              Crown Gems
             </span>
           </Link>
 
@@ -58,6 +60,7 @@ export const Header = () => {
             >
               <Search className="w-5 h-5" />
             </Button>
+            <ThemeToggle />
             <Button variant="icon" size="icon" onClick={() => navigate("/saved")}>
               <Heart className="w-5 h-5" />
             </Button>

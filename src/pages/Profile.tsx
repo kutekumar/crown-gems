@@ -84,7 +84,7 @@ export default function Profile() {
             </div>
             <div className="flex-1">
               <h1 className="font-serif text-xl font-medium">
-                {user ? "Welcome Back" : "Welcome to Gemora"}
+                {user ? "Welcome Back" : "Welcome to Crown Gems"}
               </h1>
               <p className="text-muted-foreground text-sm">
                 {user ? user.email : "Sign in to access your account"}
@@ -235,7 +235,7 @@ export default function Profile() {
 
         {/* App Version */}
         <div className="text-center py-8">
-          <p className="text-xs text-muted-foreground">Gemora v1.0.0</p>
+          <p className="text-xs text-muted-foreground">Crown Gems v1.0.0</p>
         </div>
       </main>
       <BottomNav />

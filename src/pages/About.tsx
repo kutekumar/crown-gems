@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { GemIcon } from "@/components/icons/DiamondIcon";
 import { ArrowRight, Globe, Users, Zap, Shield, Heart, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import mingalarmonLogo from "@/assets/mingalarmon-logo.png";
+import mingalarmonLogoLight from "@/assets/mingalarmon-logo-light-mode.png";
+import mingalarmonLogoDark from "@/assets/mingalarmon-logo-dark-mode.png";
 
 const About = () => {
   const navigate = useNavigate();
@@ -98,7 +99,7 @@ const About = () => {
                 Pioneering Digital Excellence
               </h2>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                Gemora is a technology-driven brand dedicated to promoting and empowering local businesses. 
+                Crown Gems is a technology-driven brand dedicated to promoting and empowering local businesses. 
                 We build centralized marketplace applications that enable businesses to showcase their services, 
                 connect with customers effortlessly, and operate with unprecedented efficiency.
               </p>
@@ -183,9 +184,14 @@ const About = () => {
               className="inline-block hover:opacity-80 transition-opacity"
             >
               <img 
-                src={mingalarmonLogo} 
+                src={mingalarmonLogoLight} 
                 alt="Mingalar Mon" 
-                className="h-16 md:h-20 object-contain mx-auto"
+                className="h-16 md:h-20 object-contain mx-auto dark:hidden"
+              />
+              <img 
+                src={mingalarmonLogoDark} 
+                alt="Mingalar Mon" 
+                className="h-16 md:h-20 object-contain mx-auto hidden dark:block"
               />
             </a>
             <p className="text-muted-foreground mt-6 max-w-lg mx-auto">

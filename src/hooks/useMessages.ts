@@ -13,6 +13,13 @@ interface Message {
   created_at: string;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image_url?: string;
+}
+
 interface Conversation {
   id: string;
   buyer_id: string;
@@ -29,6 +36,7 @@ interface Conversation {
     id: string;
     full_name: string | null;
   };
+  product?: Product;
   last_message?: Message;
   unread_count?: number;
 }
@@ -45,6 +53,14 @@ export function useMessages() {
       return;
     }
 
+    // Wait for role to be loaded
+    if (role === null) {
+      console.log("Waiting for role to be loaded...");
+      return;
+    }
+
+    console.log("Fetching conversations for user:", user.id, "role:", role);
+
     try {
       // Fetch conversations based on role
       let query = supabase
@@ -55,11 +71,43 @@ export function useMessages() {
             id,
             business_name,
             user_id
+          ),
+          product:products (
+            id,
+            name,
+            price
           )
         `)
         .order("updated_at", { ascending: false });
 
+      // Filter by role - buyers see their conversations, sellers see theirs
+      if (role === "seller") {
+        // For sellers, find their seller record first
+        const { data: sellerRecord, error: sellerError } = await supabase
+          .from("sellers")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        console.log("Seller record lookup:", sellerRecord, sellerError);
+        
+        if (sellerRecord) {
+          query = query.eq("seller_id", sellerRecord.id);
+        } else {
+          // Seller account but no seller record yet
+          console.log("No seller record found for user");
+          setConversations([]);
+          setLoading(false);
+          return;
+        }
+      } else {
+        // For buyers, filter by buyer_id
+        query = query.eq("buyer_id", user.id);
+      }
+
       const { data, error } = await query;
+
+      console.log("Conversations query result:", data, error);
 
       if (error) throw error;
 
@@ -87,18 +135,39 @@ export function useMessages() {
             .eq("user_id", conv.buyer_id)
             .maybeSingle();
 
+          // Fetch product image if product exists
+          let productWithImage = conv.product;
+          if (conv.product_id) {
+            const { data: productImages } = await supabase
+              .from("product_images")
+              .select("image_url")
+              .eq("product_id", conv.product_id)
+              .eq("is_primary", true)
+              .maybeSingle();
+
+            if (productImages && conv.product) {
+              productWithImage = {
+                ...conv.product,
+                image_url: productImages.image_url,
+              };
+            }
+          }
+
           return {
             ...conv,
             buyer: buyerProfile,
+            product: productWithImage,
             last_message: messages?.[0],
             unread_count: count || 0,
           };
         })
       );
 
+      console.log("Final conversations with messages:", conversationsWithMessages);
       setConversations(conversationsWithMessages);
     } catch (error) {
       console.error("Error fetching conversations:", error);
+      toast.error("Failed to load conversations");
     } finally {
       setLoading(false);
     }
@@ -118,12 +187,21 @@ export function useMessages() {
       // Check if conversation already exists
       const { data: existing } = await supabase
         .from("conversations")
-        .select("id")
+        .select("id, product_id")
         .eq("buyer_id", user.id)
         .eq("seller_id", sellerId)
         .maybeSingle();
 
       if (existing) {
+        // If conversation exists but doesn't have a product_id, update it
+        if (productId && !existing.product_id) {
+          await supabase
+            .from("conversations")
+            .update({ product_id: productId })
+            .eq("id", existing.id);
+          
+          console.log("Updated existing conversation with product_id:", productId);
+        }
         return existing.id;
       }
 
@@ -140,6 +218,7 @@ export function useMessages() {
 
       if (error) throw error;
 
+      console.log("Created new conversation with product_id:", productId);
       await fetchConversations();
       return data.id;
     } catch (error) {
@@ -175,6 +254,8 @@ export function useConversation(conversationId: string | null) {
       return;
     }
 
+    console.log("Fetching messages for conversation:", conversationId);
+
     try {
       // Fetch conversation details
       const { data: convData, error: convError } = await supabase
@@ -185,12 +266,26 @@ export function useConversation(conversationId: string | null) {
             id,
             business_name,
             user_id
+          ),
+          product:products (
+            id,
+            name,
+            price
           )
         `)
         .eq("id", conversationId)
-        .single();
+        .maybeSingle();
+
+      console.log("Conversation data:", convData, convError);
 
       if (convError) throw convError;
+      
+      if (!convData) {
+        console.error("Conversation not found for ID:", conversationId);
+        toast.error("Conversation not found");
+        setLoading(false);
+        return;
+      }
 
       // Fetch buyer profile
       const { data: buyerProfile } = await supabase
@@ -199,9 +294,28 @@ export function useConversation(conversationId: string | null) {
         .eq("user_id", convData.buyer_id)
         .maybeSingle();
 
+      // Fetch product image if product exists
+      let productWithImage = convData.product;
+      if (convData.product_id && convData.product) {
+        const { data: productImages } = await supabase
+          .from("product_images")
+          .select("image_url")
+          .eq("product_id", convData.product_id)
+          .eq("is_primary", true)
+          .maybeSingle();
+
+        if (productImages) {
+          productWithImage = {
+            ...convData.product,
+            image_url: productImages.image_url,
+          };
+        }
+      }
+
       setConversation({
         ...convData,
         buyer: buyerProfile,
+        product: productWithImage,
       });
 
       // Fetch messages
@@ -213,6 +327,7 @@ export function useConversation(conversationId: string | null) {
 
       if (messagesError) throw messagesError;
 
+      console.log("Messages fetched:", messagesData);
       setMessages(messagesData || []);
 
       // Mark messages as read
@@ -224,6 +339,7 @@ export function useConversation(conversationId: string | null) {
         .eq("is_read", false);
     } catch (error) {
       console.error("Error fetching messages:", error);
+      toast.error("Failed to load messages");
     } finally {
       setLoading(false);
     }
@@ -236,6 +352,8 @@ export function useConversation(conversationId: string | null) {
     let channel: RealtimeChannel | null = null;
 
     if (conversationId && user) {
+      console.log("Setting up realtime subscription for conversation:", conversationId);
+      
       channel = supabase
         .channel(`messages:${conversationId}`)
         .on(
@@ -247,19 +365,37 @@ export function useConversation(conversationId: string | null) {
             filter: `conversation_id=eq.${conversationId}`,
           },
           (payload) => {
+            console.log("Realtime message received:", payload);
             const newMessage = payload.new as Message;
-            setMessages((prev) => [...prev, newMessage]);
+            
+            // Don't add if it's our own message (already added optimistically)
+            if (newMessage.sender_id === user.id) {
+              console.log("Skipping own message from realtime (already added optimistically)");
+              return;
+            }
+            
+            // Only add messages from other users
+            setMessages((prev) => {
+              // Check if message already exists
+              const exists = prev.some(msg => msg.id === newMessage.id);
+              if (exists) {
+                console.log("Message already exists, skipping");
+                return prev;
+              }
+              console.log("Adding new message from other user:", newMessage);
+              return [...prev, newMessage];
+            });
 
             // Mark as read if not from current user
-            if (newMessage.sender_id !== user.id) {
-              supabase
-                .from("messages")
-                .update({ is_read: true })
-                .eq("id", newMessage.id);
-            }
+            supabase
+              .from("messages")
+              .update({ is_read: true })
+              .eq("id", newMessage.id);
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log("Realtime subscription status:", status);
+        });
     }
 
     return () => {
@@ -272,14 +408,41 @@ export function useConversation(conversationId: string | null) {
   const sendMessage = async (content: string) => {
     if (!conversationId || !user || !content.trim()) return false;
 
+    // Create optimistic message
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      conversation_id: conversationId,
+      sender_id: user.id,
+      content: content.trim(),
+      is_read: false,
+      created_at: new Date().toISOString(),
+    };
+
+    // Add optimistic message immediately
+    setMessages((prev) => [...prev, optimisticMessage]);
+    console.log("Added optimistic message:", optimisticMessage);
+
     try {
-      const { error } = await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        content: content.trim(),
-      });
+      const { data, error } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: content.trim(),
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      console.log("Message sent successfully:", data);
+
+      // Replace optimistic message with real one
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === optimisticMessage.id ? data : msg
+        )
+      );
 
       // Update conversation's updated_at
       await supabase
@@ -290,6 +453,10 @@ export function useConversation(conversationId: string | null) {
       return true;
     } catch (error) {
       console.error("Error sending message:", error);
+      // Remove optimistic message on error
+      setMessages((prev) =>
+        prev.filter((msg) => msg.id !== optimisticMessage.id)
+      );
       toast.error("Failed to send message");
       return false;
     }

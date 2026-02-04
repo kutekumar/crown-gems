@@ -144,9 +144,9 @@ export default function Auth() {
         
         <div className="flex-1 flex flex-col items-center justify-center p-6">
           <GemIcon className="w-12 h-12 text-champagne mb-6" />
-          <h1 className="font-serif text-2xl font-semibold mb-2">Join Gemora</h1>
+          <h1 className="font-serif text-2xl font-semibold mb-2">Join Crown Gems</h1>
           <p className="text-muted-foreground text-center mb-8">
-            Choose how you want to use Gemora
+            Choose how you want to use Crown Gems
           </p>
           
           <div className="w-full max-w-sm space-y-4">
@@ -215,10 +215,10 @@ export default function Auth() {
         </h1>
         <p className="text-muted-foreground text-center mb-8">
           {mode === "signin" 
-            ? "Sign in to continue to Gemora" 
+            ? "Sign in to continue to Crown Gems" 
             : role === "seller"
               ? "Start selling your jewelry to thousands"
-              : "Join Gemora to save favorites and contact sellers"}
+              : "Join Crown Gems to save favorites and contact sellers"}
         </p>
         
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">

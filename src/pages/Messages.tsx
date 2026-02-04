@@ -11,9 +11,25 @@ import { MessageCircle } from "lucide-react";
 
 export default function Messages() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
   const { conversations, loading } = useMessages();
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+
+  console.log("Messages page - user:", user?.id, "role:", role, "authLoading:", authLoading, "conversations:", conversations.length, "loading:", loading);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <Header />
+        <main className="pt-16">
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-2 border-champagne border-t-transparent rounded-full animate-spin" />
+          </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -40,7 +56,7 @@ export default function Messages() {
     );
   }
 
-  if (loading) {
+  if (loading && conversations.length === 0) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <Header />
@@ -54,17 +70,28 @@ export default function Messages() {
     );
   }
 
-  // Mobile: show either list or chat
-  if (selectedConversationId) {
+  // Show helpful message for sellers without seller records
+  if (role === "seller" && conversations.length === 0 && !loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col md:hidden">
-        <div className="flex-1">
-          <ChatWindow
-            conversationId={selectedConversationId}
-            onClose={() => setSelectedConversationId(null)}
-            isFullPage
-          />
-        </div>
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <Header />
+        <main className="pt-16">
+          <div className="flex flex-col items-center justify-center py-20 px-4">
+            <div className="w-20 h-20 rounded-full bg-champagne-light flex items-center justify-center mb-6">
+              <MessageCircle className="w-10 h-10 text-champagne" />
+            </div>
+            <h2 className="font-serif text-xl font-medium mb-2 text-center">
+              No messages yet
+            </h2>
+            <p className="text-muted-foreground text-center max-w-sm mb-6">
+              When buyers contact you about your products, their messages will appear here.
+            </p>
+            {/* Check if user has seller application or products */}
+            <Button variant="champagne-outline" onClick={() => navigate("/seller/dashboard")}>
+              Go to Seller Dashboard
+            </Button>
+          </div>
+        </main>
         <BottomNav />
       </div>
     );
@@ -78,7 +105,9 @@ export default function Messages() {
         <div className="px-4 py-6 border-b border-border">
           <h1 className="font-serif text-2xl md:text-3xl font-medium">Messages</h1>
           <p className="text-muted-foreground mt-1">
-            Your conversations with {conversations.length > 0 ? "sellers" : "jewelry sellers"}
+            {conversations.length > 0 
+              ? `${conversations.length} active conversation${conversations.length > 1 ? 's' : ''}`
+              : "No conversations yet"}
           </p>
         </div>
 
@@ -91,12 +120,16 @@ export default function Messages() {
               selectedId={selectedConversationId}
             />
           </div>
-          <div className="flex-1 p-6">
+          <div className="flex-1">
             {selectedConversationId ? (
-              <ChatWindow
-                conversationId={selectedConversationId}
-                onClose={() => setSelectedConversationId(null)}
-              />
+              <div className="h-full flex items-center justify-center p-6">
+                <div className="w-full max-w-4xl h-full">
+                  <ChatWindow
+                    conversationId={selectedConversationId}
+                    onClose={() => setSelectedConversationId(null)}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center">
                 <MessageCircle className="w-12 h-12 text-muted-foreground mb-4" />
@@ -108,12 +141,22 @@ export default function Messages() {
           </div>
         </div>
 
-        {/* Mobile: List only */}
+        {/* Mobile: List or Chat */}
         <div className="md:hidden">
-          <ConversationList
-            conversations={conversations}
-            onSelect={setSelectedConversationId}
-          />
+          {selectedConversationId ? (
+            <div className="h-[calc(100vh-180px)]">
+              <ChatWindow
+                conversationId={selectedConversationId}
+                onClose={() => setSelectedConversationId(null)}
+                isFullPage
+              />
+            </div>
+          ) : (
+            <ConversationList
+              conversations={conversations}
+              onSelect={setSelectedConversationId}
+            />
+          )}
         </div>
       </main>
       <BottomNav />

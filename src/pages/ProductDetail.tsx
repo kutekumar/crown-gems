@@ -98,7 +98,7 @@ export default function ProductDetail() {
     if (isUUID && sellerId) {
       setIsStartingChat(true);
       try {
-        const conversationId = await startConversation(sellerId);
+        const conversationId = await startConversation(sellerId, product.id);
         if (conversationId) {
           navigate("/messages");
         }
@@ -125,7 +125,7 @@ export default function ProductDetail() {
         return;
       }
 
-      const conversationId = await startConversation(seller.id);
+      const conversationId = await startConversation(seller.id, product.id);
       if (conversationId) {
         navigate("/messages");
       }

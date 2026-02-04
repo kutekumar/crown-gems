@@ -1,6 +1,13 @@
-import { MessageCircle, ChevronRight } from "lucide-react";
+import { MessageCircle, ChevronRight, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image_url?: string;
+}
 
 interface Conversation {
   id: string;
@@ -15,6 +22,7 @@ interface Conversation {
     id: string;
     full_name: string | null;
   };
+  product?: Product;
   last_message?: {
     id: string;
     content: string;
@@ -62,10 +70,10 @@ export function ConversationList({ conversations, onSelect, selectedId }: Conver
           <MessageCircle className="w-8 h-8 text-champagne" />
         </div>
         <h3 className="font-serif text-lg font-medium mb-2">No conversations yet</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground max-w-sm">
           {role === "seller"
-            ? "When buyers message you, they'll appear here"
-            : "Start a conversation with a seller from any product page"}
+            ? "When buyers contact you about your products, their messages will appear here."
+            : "Browse products and click 'Contact Seller' on any item you're interested in to start a conversation."}
         </p>
       </div>
     );
@@ -96,9 +104,24 @@ export function ConversationList({ conversations, onSelect, selectedId }: Conver
                 </span>
               )}
             </div>
-            {conv.last_message && (
+            
+            {/* Product indicator for sellers */}
+            {role === "seller" && conv.product && (
+              <div className="flex items-center gap-1.5 mt-0.5 mb-1">
+                <Package className="w-3 h-3 text-champagne flex-shrink-0" />
+                <span className="text-xs text-champagne truncate font-medium">
+                  {conv.product.name}
+                </span>
+              </div>
+            )}
+            
+            {conv.last_message ? (
               <p className="text-sm text-muted-foreground truncate mt-0.5">
                 {conv.last_message.content}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground truncate mt-0.5">
+                No messages yet
               </p>
             )}
           </div>

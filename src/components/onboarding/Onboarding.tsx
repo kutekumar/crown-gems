@@ -49,7 +49,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           <div className="text-center mb-10 animate-fade-up opacity-0">
             <GemIcon className="w-12 h-12 text-champagne mx-auto mb-4" />
             <h1 className="font-serif text-3xl font-semibold mb-2">
-              Welcome to Gemora
+              Welcome to Crown Gems
             </h1>
             <p className="text-muted-foreground">
               How would you like to use the marketplace?

@@ -175,7 +175,7 @@ export const SellerApplicationForm = ({ onClose }: SellerApplicationFormProps) =
           </div>
           <h2 className="font-serif text-2xl font-semibold mb-3">Application Submitted!</h2>
           <p className="text-muted-foreground mb-6">
-            Thank you for applying to become a seller on Gemora. Our team will review your 
+            Thank you for applying to become a seller on Crown Gems. Our team will review your 
             application and get back to you within 2-3 business days.
           </p>
           <Button variant="champagne" onClick={onClose}>

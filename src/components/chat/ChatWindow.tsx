@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Send, ArrowLeft } from "lucide-react";
+import { X, Send, ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useConversation } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface ChatWindowProps {
   conversationId: string | null;
@@ -13,11 +14,14 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ conversationId, onClose, isFullPage = false }: ChatWindowProps) {
+  const navigate = useNavigate();
   const { user, role } = useAuth();
   const { messages, conversation, loading, sendMessage } = useConversation(conversationId);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  console.log("ChatWindow - conversationId:", conversationId, "loading:", loading, "conversation:", conversation, "messages:", messages.length);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,8 +51,16 @@ export function ChatWindow({ conversationId, onClose, isFullPage = false }: Chat
 
   const getOtherPartyName = () => {
     if (!conversation) return "Chat";
+    
+    console.log("getOtherPartyName - role:", role, "buyer:", conversation.buyer, "seller:", conversation.seller);
+    
+    // Check if user is talking to themselves (test conversation)
+    if (conversation.buyer_id === user?.id && conversation.seller?.user_id === user?.id) {
+      return "You (Test Conversation)";
+    }
+    
     if (role === "seller") {
-      return conversation.buyer?.full_name || "Buyer";
+      return conversation.buyer?.full_name || "Anonymous Buyer";
     }
     return conversation.seller?.business_name || "Seller";
   };
@@ -95,7 +107,27 @@ export function ChatWindow({ conversationId, onClose, isFullPage = false }: Chat
     );
   }
 
+  if (!conversation && !loading) {
+    return (
+      <div className={cn(
+        "flex flex-col bg-background",
+        isFullPage ? "h-full" : "h-[500px] rounded-2xl shadow-lg border border-border"
+      )}>
+        <div className="flex-1 flex items-center justify-center text-center p-4">
+          <div>
+            <p className="text-muted-foreground mb-2">Conversation not found</p>
+            <Button variant="champagne-outline" size="sm" onClick={onClose}>
+              Go Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const messageGroups = groupMessagesByDate();
+
+  console.log("Rendering ChatWindow - messageGroups:", messageGroups, "conversation:", conversation);
 
   return (
     <div className={cn(
@@ -103,19 +135,53 @@ export function ChatWindow({ conversationId, onClose, isFullPage = false }: Chat
       isFullPage ? "h-full" : "h-[500px] rounded-2xl shadow-lg border border-border overflow-hidden"
     )}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card">
-        <button
-          onClick={onClose}
-          className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
-        >
-          {isFullPage ? <ArrowLeft className="w-5 h-5" /> : <X className="w-5 h-5" />}
-        </button>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-medium truncate">{getOtherPartyName()}</h3>
-          <p className="text-xs text-muted-foreground">
-            {role === "seller" ? "Buyer" : "Seller"}
-          </p>
+      <div className="border-b border-border bg-card">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
+          >
+            {isFullPage ? <ArrowLeft className="w-5 h-5" /> : <X className="w-5 h-5" />}
+          </button>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium truncate">{getOtherPartyName()}</h3>
+            <p className="text-xs text-muted-foreground">
+              {role === "seller" ? "Buyer" : "Seller"}
+            </p>
+          </div>
         </div>
+        
+        {/* Product Context - Show if conversation is about a specific product */}
+        {conversation?.product && (
+          <div 
+            className="mx-4 mb-3 p-3 bg-champagne-light/30 border border-champagne/20 rounded-lg cursor-pointer hover:bg-champagne-light/50 transition-colors"
+            onClick={() => navigate(`/product/${conversation.product?.id}`)}
+          >
+            <div className="flex items-center gap-3">
+              {conversation.product.image_url && (
+                <img
+                  src={conversation.product.image_url}
+                  alt={conversation.product.name}
+                  className="w-12 h-12 object-cover rounded-md"
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-0.5">
+                      {role === "seller" ? "Inquiring about:" : "Product:"}
+                    </p>
+                    <h4 className="font-medium text-sm truncate">{conversation.product.name}</h4>
+                    <p className="text-sm text-champagne font-semibold">
+                      ${conversation.product.price.toLocaleString()}
+                    </p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Messages */}
