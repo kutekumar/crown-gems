@@ -187,7 +187,7 @@ const Sellers = () => {
               <div
                 key={seller.id}
                 className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-elegant transition-shadow cursor-pointer group"
-                onClick={() => navigate(`/shop?seller=${seller.id}`)}
+                onClick={() => navigate(`/seller/${seller.id}`)}
               >
                 {/* Cover Image */}
                 <div className="relative h-28">

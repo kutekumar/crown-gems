@@ -13,7 +13,9 @@ import {
   Phone, 
   X,
   CheckCircle,
-  Loader2
+  Loader2,
+  Upload,
+  Image as ImageIcon
 } from "lucide-react";
 import { z } from "zod";
 
@@ -60,6 +62,11 @@ export const SellerApplicationForm = ({ onClose }: SellerApplicationFormProps) =
     phone: "",
     specialties: [] as string[],
   });
+  
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const handleSpecialtyToggle = (specialty: string) => {
     setFormData((prev) => ({
@@ -68,6 +75,71 @@ export const SellerApplicationForm = ({ onClose }: SellerApplicationFormProps) =
         ? prev.specialties.filter((s) => s !== specialty)
         : [...prev.specialties, specialty],
     }));
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Logo must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Cover image must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      setCoverFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (file: File, type: 'logo' | 'cover'): Promise<string | null> => {
+    if (!user) return null;
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${type}_${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError, data } = await supabase.storage
+      .from('seller-images')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('seller-images')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,6 +208,36 @@ export const SellerApplicationForm = ({ onClose }: SellerApplicationFormProps) =
         return;
       }
 
+      // Upload images if provided
+      let logoUrl: string | null = null;
+      let coverUrl: string | null = null;
+
+      if (logoFile) {
+        logoUrl = await uploadImage(logoFile, 'logo');
+        if (!logoUrl) {
+          toast({
+            title: "Upload failed",
+            description: "Failed to upload logo. Please try again.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (coverFile) {
+        coverUrl = await uploadImage(coverFile, 'cover');
+        if (!coverUrl) {
+          toast({
+            title: "Upload failed",
+            description: "Failed to upload cover image. Please try again.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
       // Submit application
       const { error } = await supabase.from("seller_applications").insert({
         user_id: user.id,
@@ -145,6 +247,8 @@ export const SellerApplicationForm = ({ onClose }: SellerApplicationFormProps) =
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         specialties: formData.specialties,
+        logo_url: logoUrl,
+        cover_image_url: coverUrl,
       });
 
       if (error) throw error;
@@ -294,6 +398,90 @@ export const SellerApplicationForm = ({ onClose }: SellerApplicationFormProps) =
             {errors.phone && (
               <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
             )}
+          </div>
+
+          {/* Logo Upload */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Business Logo (Optional)
+            </label>
+            <div className="space-y-3">
+              {logoPreview ? (
+                <div className="relative w-32 h-32 mx-auto">
+                  <img 
+                    src={logoPreview} 
+                    alt="Logo preview" 
+                    className="w-full h-full object-cover rounded-lg border-2 border-border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLogoFile(null);
+                      setLogoPreview(null);
+                    }}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-champagne transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Click to upload logo</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleLogoChange}
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
+          {/* Cover Image Upload */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Cover Image (Optional)
+            </label>
+            <div className="space-y-3">
+              {coverPreview ? (
+                <div className="relative w-full h-40">
+                  <img 
+                    src={coverPreview} 
+                    alt="Cover preview" 
+                    className="w-full h-full object-cover rounded-lg border-2 border-border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCoverFile(null);
+                      setCoverPreview(null);
+                    }}
+                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-champagne transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Click to upload cover image</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleCoverChange}
+                  />
+                </label>
+              )}
+            </div>
           </div>
 
           {/* Specialties */}

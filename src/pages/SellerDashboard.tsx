@@ -37,6 +37,8 @@ interface SellerInfo {
   phone: string | null;
   email: string | null;
   is_verified: boolean;
+  logo_url: string | null;
+  cover_image_url: string | null;
 }
 
 interface ProductImage {
@@ -89,19 +91,41 @@ export default function SellerDashboard() {
   });
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [saving, setSaving] = useState(false);
+  
+  // Seller profile image state
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        navigate("/auth");
-      } else if (role && role !== "seller") {
-        navigate("/");
-        toast.error("Access denied. Seller account required.");
-      } else if (role === "seller") {
-        fetchSellerData();
-      }
+    if (!authLoading && user) {
+      checkSellerAndFetchData();
+    } else if (!authLoading && !user) {
+      navigate("/auth");
     }
-  }, [user, role, authLoading, navigate]);
+  }, [user, authLoading, navigate]);
+
+  const checkSellerAndFetchData = async () => {
+    if (!user) return;
+
+    // Check if user is a seller by querying sellers table
+    const { data: sellerData, error } = await supabase
+      .from('sellers')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error || !sellerData) {
+      navigate("/");
+      toast.error("Access denied. Seller account required.");
+      return;
+    }
+
+    // User is a seller, fetch data
+    fetchSellerData();
+  };
 
   const fetchSellerData = async () => {
     if (!user) return;
@@ -365,6 +389,104 @@ export default function SellerDashboard() {
     }
   };
 
+  const handleUpdateSellerImages = async () => {
+    if (!seller || !user) return;
+
+    setUploadingImages(true);
+    try {
+      let logoUrl: string | null = seller.logo_url;
+      let coverUrl: string | null = seller.cover_image_url;
+
+      // Upload logo if changed
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${user.id}/logo_${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError, data } = await supabase.storage
+          .from('seller-images')
+          .upload(fileName, logoFile, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error('Logo upload error:', uploadError);
+          toast.error("Failed to upload logo");
+          setUploadingImages(false);
+          return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('seller-images')
+          .getPublicUrl(fileName);
+
+        logoUrl = publicUrl;
+      }
+
+      // Upload cover image if changed
+      if (coverFile) {
+        const fileExt = coverFile.name.split('.').pop();
+        const fileName = `${user.id}/cover_${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError, data } = await supabase.storage
+          .from('seller-images')
+          .upload(fileName, coverFile, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error('Cover upload error:', uploadError);
+          toast.error("Failed to upload cover image");
+          setUploadingImages(false);
+          return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('seller-images')
+          .getPublicUrl(fileName);
+
+        coverUrl = publicUrl;
+      }
+
+      // Update seller record
+      const { error: updateError } = await supabase
+        .from("sellers")
+        .update({
+          logo_url: logoUrl,
+          cover_image_url: coverUrl,
+        })
+        .eq("id", seller.id);
+
+      if (updateError) {
+        console.error('Update error:', updateError);
+        toast.error("Failed to update seller information");
+        setUploadingImages(false);
+        return;
+      }
+
+      // Update local state
+      setSeller({
+        ...seller,
+        logo_url: logoUrl,
+        cover_image_url: coverUrl,
+      });
+
+      // Clear preview states
+      setLogoFile(null);
+      setCoverFile(null);
+      setLogoPreview(null);
+      setCoverPreview(null);
+
+      toast.success("Images updated successfully!");
+    } catch (error) {
+      console.error("Error updating images:", error);
+      toast.error("Failed to update images");
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
@@ -587,9 +709,166 @@ export default function SellerDashboard() {
 
         {/* Settings Tab */}
         {activeTab === "settings" && seller && (
-          <div className="max-w-xl">
+          <div className="max-w-2xl">
             <h2 className="font-serif text-xl font-medium mb-6">Business Settings</h2>
+            
+            {/* Logo and Cover Image Upload */}
+            <div className="bg-card rounded-2xl p-6 mb-6">
+              <h3 className="font-medium mb-4">Profile Images</h3>
+              
+              {/* Logo Upload */}
+              <div className="mb-6">
+                <label className="text-sm font-medium mb-2 block">Business Logo</label>
+                <div className="flex items-start gap-4">
+                  {/* Current or Preview Logo */}
+                  <div className="flex-shrink-0">
+                    {logoPreview || seller.logo_url ? (
+                      <div className="relative w-32 h-32">
+                        <img 
+                          src={logoPreview || seller.logo_url!} 
+                          alt="Logo" 
+                          className="w-full h-full object-cover rounded-xl border-2 border-border"
+                        />
+                        {logoPreview && (
+                          <button
+                            onClick={() => {
+                              setLogoFile(null);
+                              setLogoPreview(null);
+                            }}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-32 h-32 rounded-xl bg-champagne-light flex items-center justify-center border-2 border-dashed border-border">
+                        <span className="font-serif font-semibold text-4xl text-champagne">
+                          {seller.business_name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload Button */}
+                  <div className="flex-1">
+                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg cursor-pointer transition-colors">
+                      <Upload className="w-4 h-4" />
+                      <span className="text-sm">Upload Logo</span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 5 * 1024 * 1024) {
+                              toast.error("Logo must be less than 5MB");
+                              return;
+                            }
+                            setLogoFile(file);
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setLogoPreview(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Recommended: Square image, at least 200x200px. Max 5MB.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cover Image Upload */}
+              <div className="mb-6">
+                <label className="text-sm font-medium mb-2 block">Cover Image</label>
+                <div>
+                  {coverPreview || seller.cover_image_url ? (
+                    <div className="relative w-full h-48">
+                      <img 
+                        src={coverPreview || seller.cover_image_url!} 
+                        alt="Cover" 
+                        className="w-full h-full object-cover rounded-xl border-2 border-border"
+                      />
+                      {coverPreview && (
+                        <button
+                          onClick={() => {
+                            setCoverFile(null);
+                            setCoverPreview(null);
+                          }}
+                          className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-full h-48 rounded-xl bg-secondary border-2 border-dashed border-border flex items-center justify-center">
+                      <div className="text-center">
+                        <Image className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No cover image</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg cursor-pointer transition-colors mt-3">
+                    <Upload className="w-4 h-4" />
+                    <span className="text-sm">Upload Cover Image</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error("Cover image must be less than 5MB");
+                            return;
+                          }
+                          setCoverFile(file);
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setCoverPreview(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Recommended: Wide image, at least 1200x400px. Max 5MB.
+                  </p>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              {(logoFile || coverFile) && (
+                <div className="flex justify-end pt-4 border-t">
+                  <Button 
+                    variant="champagne" 
+                    onClick={handleUpdateSellerImages}
+                    disabled={uploadingImages}
+                  >
+                    {uploadingImages ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
+                        Uploading...
+                      </>
+                    ) : (
+                      "Save Images"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Business Info */}
             <div className="space-y-4 bg-card rounded-2xl p-6">
+              <h3 className="font-medium mb-4">Business Information</h3>
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Business Name</label>
                 <Input value={seller.business_name} readOnly className="bg-secondary" />

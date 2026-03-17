@@ -13,6 +13,7 @@ import { useMessages } from "@/hooks/useMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProductReviews } from "@/components/ProductReviews";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -397,16 +398,30 @@ export default function ProductDetail() {
           <div className="px-4 py-6 space-y-6 animate-fade-up">
             {/* Seller */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-champagne-light flex items-center justify-center">
+              <button 
+                onClick={() => sellerId && navigate(`/seller/${sellerId}`)}
+                className={cn(
+                  "w-10 h-10 rounded-full bg-champagne-light flex items-center justify-center",
+                  sellerId && "cursor-pointer hover:ring-2 ring-champagne transition-all"
+                )}
+                disabled={!sellerId}
+              >
                 <span className="font-serif font-semibold text-champagne">
                   {product.seller.name.charAt(0)}
                 </span>
-              </div>
+              </button>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">
+                  <button
+                    onClick={() => sellerId && navigate(`/seller/${sellerId}`)}
+                    className={cn(
+                      "font-medium text-sm",
+                      sellerId && "hover:text-champagne transition-colors cursor-pointer"
+                    )}
+                    disabled={!sellerId}
+                  >
                     {product.seller.name}
-                  </span>
+                  </button>
                   {product.seller.verified && (
                     <span className="w-4 h-4 bg-champagne rounded-full flex items-center justify-center">
                       <svg
@@ -555,6 +570,13 @@ export default function ProductDetail() {
                 <p className="text-sm text-amber-800 dark:text-amber-200">
                   <strong>Demo Product:</strong> This is a sample product. Real products from verified sellers can be saved and purchased.
                 </p>
+              </div>
+            )}
+
+            {/* Product Reviews */}
+            {isUUID && (
+              <div className="pt-6 border-t border-border">
+                <ProductReviews productId={product.id} />
               </div>
             )}
           </div>

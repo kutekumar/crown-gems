@@ -17,6 +17,7 @@ import Sellers from "./pages/Sellers";
 import About from "./pages/About";
 import Auth from "./pages/Auth";
 import SellerDashboard from "./pages/SellerDashboard";
+import SellerProfile from "./pages/SellerProfile";
 import AdminDashboard from "./pages/AdminDashboard";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/seller/dashboard" element={<SellerDashboard />} />
+              <Route path="/seller/:id" element={<SellerProfile />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="*" element={<NotFound />} />

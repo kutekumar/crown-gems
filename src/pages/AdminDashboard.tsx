@@ -32,7 +32,8 @@ interface SellerApplication {
   email: string | null;
   specialties: string[];
   status: string;
-  admin_notes: string | null;
+  logo_url: string | null;
+  cover_image_url: string | null;
   created_at: string;
 }
 
@@ -56,23 +57,46 @@ const AdminDashboard = () => {
   const [selectedApplication, setSelectedApplication] = useState<SellerApplication | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!user) {
       navigate("/auth");
       return;
     }
-    if (role !== "admin") {
+    checkAdminAccess();
+  }, [user, navigate]);
+
+  const checkAdminAccess = async () => {
+    if (!user) return;
+    
+    // Check if user is in admin_users table
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (error || !data) {
+      // Also check old role-based system for backwards compatibility
+      if (role === "admin") {
+        setIsAdmin(true);
+        fetchData();
+        return;
+      }
+      
       toast({
         title: "Access Denied",
-        description: "You don't have permission to access the admin dashboard.",
+        description: "You don't have admin privileges",
         variant: "destructive",
       });
       navigate("/");
       return;
     }
+    
+    setIsAdmin(true);
     fetchData();
-  }, [user, role, navigate]);
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -105,9 +129,6 @@ const AdminDashboard = () => {
         .from("seller_applications")
         .update({
           status: "approved",
-          admin_notes: adminNotes || null,
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString(),
         })
         .eq("id", application.id);
 
@@ -122,18 +143,34 @@ const AdminDashboard = () => {
         phone: application.phone,
         email: application.email,
         specialties: application.specialties,
+        logo_url: application.logo_url,
+        cover_image_url: application.cover_image_url,
         is_verified: true,
       });
 
-      if (sellerError) throw sellerError;
-
-      // Add seller role to user
-      const { error: roleError } = await supabase.from("user_roles").insert({
-        user_id: application.user_id,
-        role: "seller",
-      });
-
-      if (roleError && !roleError.message.includes("duplicate")) throw roleError;
+      if (sellerError) {
+        // If seller already exists, update it
+        if (sellerError.code === '23505') {
+          const { error: updateError } = await supabase
+            .from("sellers")
+            .update({
+              business_name: application.business_name,
+              description: application.description,
+              location: application.location,
+              phone: application.phone,
+              email: application.email,
+              specialties: application.specialties,
+              logo_url: application.logo_url,
+              cover_image_url: application.cover_image_url,
+              is_verified: true,
+            })
+            .eq("user_id", application.user_id);
+          
+          if (updateError) throw updateError;
+        } else {
+          throw sellerError;
+        }
+      }
 
       toast({
         title: "Application Approved",
@@ -162,9 +199,6 @@ const AdminDashboard = () => {
         .from("seller_applications")
         .update({
           status: "rejected",
-          admin_notes: adminNotes || "Application did not meet our requirements.",
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString(),
         })
         .eq("id", application.id);
 
@@ -462,11 +496,6 @@ const AdminDashboard = () => {
                           {application.status}
                         </span>
                       </div>
-                      {application.admin_notes && (
-                        <p className="text-sm text-muted-foreground">
-                          Note: {application.admin_notes}
-                        </p>
-                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {new Date(application.created_at).toLocaleDateString()}
