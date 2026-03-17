@@ -42,17 +42,18 @@ export const Header = () => {
         .from('sellers')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       console.log('👔 Seller check:', { sellerData, sellerError });
       setIsSeller(!!sellerData);
 
-      // Check if admin
+      // Check if admin using user_roles table
       const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('id')
+        .from('user_roles')
+        .select('role')
         .eq('user_id', user.id)
-        .single();
+        .eq('role', 'admin')
+        .maybeSingle();
       
       console.log('🛡️ Admin check:', { adminData, adminError });
       setIsAdmin(!!adminData);

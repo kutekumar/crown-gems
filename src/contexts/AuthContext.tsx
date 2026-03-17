@@ -31,6 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (data) {
       setRole(data.role as AppRole);
+    } else {
+      // Default to buyer if no role is found
+      setRole("buyer");
     }
   };
 

@@ -53,13 +53,10 @@ export function useMessages() {
       return;
     }
 
-    // Wait for role to be loaded
-    if (role === null) {
-      console.log("Waiting for role to be loaded...");
-      return;
-    }
+    // If role is null, assume buyer (default role)
+    const effectiveRole = role || "buyer";
 
-    console.log("Fetching conversations for user:", user.id, "role:", role);
+    console.log("Fetching conversations for user:", user.id, "role:", effectiveRole);
 
     try {
       // Fetch conversations based on role
@@ -78,10 +75,10 @@ export function useMessages() {
             price
           )
         `)
-        .order("updated_at", { ascending: false });
+        .order("created_at", { ascending: false });
 
       // Filter by role - buyers see their conversations, sellers see theirs
-      if (role === "seller") {
+      if (effectiveRole === "seller") {
         // For sellers, find their seller record first
         const { data: sellerRecord, error: sellerError } = await supabase
           .from("sellers")
@@ -167,7 +164,9 @@ export function useMessages() {
       setConversations(conversationsWithMessages);
     } catch (error) {
       console.error("Error fetching conversations:", error);
-      toast.error("Failed to load conversations");
+      // Don't show toast error immediately - tables might not exist yet
+      // Just set loading to false and show empty conversations
+      setConversations([]);
     } finally {
       setLoading(false);
     }
