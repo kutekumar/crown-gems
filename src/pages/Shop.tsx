@@ -151,24 +151,24 @@ const Shop = () => {
       
       <main className="container max-w-7xl mx-auto px-4 py-6">
         {/* Page Header */}
-        <div className="mb-6">
-          <h1 className="font-serif text-2xl md:text-3xl font-semibold mb-1">Shop All Jewelry</h1>
-          <p className="text-sm text-muted-foreground">
+        <div className="mb-8">
+          <h1 className="font-serif text-2xl md:text-3xl font-semibold mb-2">Shop All Jewelry</h1>
+          <p className="text-sm text-muted-foreground tracking-wide">
             Discover exquisite pieces from verified sellers
           </p>
         </div>
 
         {/* Filters Bar */}
-        <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-2">
             {/* Mobile Filter Button */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="champagne-outline" size="sm" className="md:hidden">
+                <Button variant="champagne-outline" size="sm" className="md:hidden hover-glow">
                   <SlidersHorizontal className="w-4 h-4 mr-2" />
                   Filters
                   {hasActiveFilters && (
-                    <span className="ml-2 w-5 h-5 rounded-full bg-champagne text-champagne-foreground text-xs flex items-center justify-center">
+                    <span className="ml-2 w-5 h-5 rounded-full bg-champagne text-champagne-foreground text-xs flex items-center justify-center shadow-sm">
                       {activeFilterChips.length}
                     </span>
                   )}
@@ -415,7 +415,7 @@ const Shop = () => {
         </div>
 
         {/* Results Count */}
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-sm text-muted-foreground mb-6 tracking-wide">
           {isLoading ? "Loading..." : `${sortedProducts.length} ${sortedProducts.length === 1 ? "piece" : "pieces"} found`}
         </p>
 
@@ -424,24 +424,29 @@ const Shop = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="space-y-3">
-                <Skeleton className="aspect-square rounded-2xl" />
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="aspect-square rounded-2xl shimmer" />
+                <Skeleton className="h-4 w-2/3 shimmer" />
+                <Skeleton className="h-4 w-1/2 shimmer" />
               </div>
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {sortedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {sortedProducts.map((product, index) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                className="animate-fade-up opacity-0"
+                style={{ animationDelay: `${index * 50}ms` }}
+              />
             ))}
           </div>
         )}
 
         {!isLoading && sortedProducts.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-muted-foreground mb-4">No pieces match your filters</p>
-            <Button variant="champagne-outline" onClick={clearFilters}>
+            <p className="text-muted-foreground mb-4 tracking-wide">No pieces match your filters</p>
+            <Button variant="champagne-outline" onClick={clearFilters} className="hover-glow">
               Clear Filters
             </Button>
           </div>

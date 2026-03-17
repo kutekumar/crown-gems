@@ -88,15 +88,15 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border shadow-soft">
       <div className="container max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center py-[5px]">
-            <img 
-              src="https://mingalarmon.com/assets/CGLogo.png" 
-              alt="Mingalar Mon" 
-              className="h-[calc(5rem-10px)] w-auto object-contain" 
+          <Link to="/" className="flex items-center py-[5px] group">
+            <img
+              src="https://mingalarmon.com/assets/CGLogo.png"
+              alt="Mingalar Mon"
+              className="h-[calc(5rem-10px)] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />
           </Link>
 

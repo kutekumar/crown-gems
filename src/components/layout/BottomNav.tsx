@@ -21,7 +21,7 @@ export const BottomNav = () => {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t border-border safe-area-inset-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t border-border safe-area-inset-bottom shadow-soft">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.href;
@@ -30,7 +30,7 @@ export const BottomNav = () => {
               key={item.label}
               onClick={() => navigate(item.href)}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 flex-1 py-2 transition-all duration-200",
+                "flex flex-col items-center justify-center gap-1 flex-1 py-2 transition-all duration-300",
                 isActive
                   ? "text-champagne"
                   : "text-muted-foreground hover:text-foreground"
@@ -38,16 +38,21 @@ export const BottomNav = () => {
             >
               <div
                 className={cn(
-                  "relative transition-transform duration-200",
+                  "relative transition-all duration-300",
                   isActive && "scale-110"
                 )}
               >
                 {item.icon}
                 {isActive && (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-champagne rounded-full animate-pulse-soft" />
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-champagne rounded-full animate-pulse-soft shadow-sm" />
                 )}
               </div>
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className={cn(
+                "text-[10px] font-medium transition-all duration-300",
+                isActive && "font-semibold"
+              )}>
+                {item.label}
+              </span>
             </button>
           );
         })}

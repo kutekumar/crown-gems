@@ -73,7 +73,7 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
     <div
       onClick={handleCardClick}
       className={cn(
-        "group relative bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-card transition-all duration-300 cursor-pointer",
+        "group relative bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-card transition-all duration-300 cursor-pointer hover-lift",
         className
       )}
       style={style}
@@ -87,22 +87,25 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
           src={product.image}
           alt={product.name}
           className={cn(
-            "w-full h-full object-cover transition-all duration-500 group-hover:scale-105",
+            "w-full h-full object-cover transition-all duration-500 group-hover:scale-110",
             imageLoaded ? "opacity-100" : "opacity-0"
           )}
           onLoad={() => setImageLoaded(true)}
         />
 
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {product.isNew && (
-            <span className="px-2.5 py-1 bg-champagne text-primary-foreground text-[10px] font-semibold uppercase tracking-wide rounded-full flex items-center gap-1">
+            <span className="px-2.5 py-1 bg-champagne text-primary-foreground text-[10px] font-semibold uppercase tracking-wide rounded-full flex items-center gap-1 shadow-sm">
               <SparkleIcon className="w-3 h-3" />
               New
             </span>
           )}
           {product.originalPrice && (
-            <span className="px-2.5 py-1 bg-rose-gold text-primary-foreground text-[10px] font-semibold uppercase tracking-wide rounded-full">
+            <span className="px-2.5 py-1 bg-rose-gold text-primary-foreground text-[10px] font-semibold uppercase tracking-wide rounded-full shadow-sm">
               Sale
             </span>
           )}
@@ -112,7 +115,7 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
         <button
           onClick={handleToggleSave}
           disabled={isToggling}
-          className="absolute top-3 right-3 w-9 h-9 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-soft transition-all hover:scale-110 active:scale-95 disabled:opacity-50"
+          className="absolute top-3 right-3 w-9 h-9 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-soft transition-all hover:scale-110 active:scale-95 disabled:opacity-50 hover-glow"
         >
           <Heart
             className={cn(
@@ -121,6 +124,13 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
             )}
           />
         </button>
+
+        {/* Quick View Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="px-4 py-2 bg-background/90 backdrop-blur-sm rounded-full text-sm font-medium shadow-elevated transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+            Quick View
+          </div>
+        </div>
       </div>
 
       {/* Content */}
@@ -131,7 +141,7 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
             {product.seller.name}
           </span>
           {product.seller.verified && (
-            <span className="w-3.5 h-3.5 bg-champagne rounded-full flex items-center justify-center flex-shrink-0">
+            <span className="w-3.5 h-3.5 bg-champagne rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
               <svg
                 viewBox="0 0 12 12"
                 className="w-2 h-2 text-primary-foreground"
@@ -144,7 +154,7 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
         </div>
 
         {/* Product Name */}
-        <h3 className="font-serif text-sm font-medium mb-2 line-clamp-2 group-hover:text-champagne transition-colors">
+        <h3 className="font-serif text-sm font-medium mb-2 line-clamp-2 group-hover:text-champagne transition-colors duration-300">
           {product.name}
         </h3>
 
@@ -160,7 +170,7 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
 
         {/* Price */}
         <div className="flex items-baseline gap-2">
-          <span className="font-serif text-base font-semibold">
+          <span className="font-serif text-base font-semibold text-gradient-gold">
             {formatPrice(product.price)}
           </span>
           {product.originalPrice && (
@@ -172,10 +182,10 @@ export const ProductCard = ({ product, className, style }: ProductCardProps) => 
 
         {/* Tags */}
         <div className="flex gap-1.5 mt-2">
-          <span className="px-2 py-0.5 bg-secondary text-[10px] text-secondary-foreground rounded-md">
+          <span className="px-2 py-0.5 bg-secondary text-[10px] text-secondary-foreground rounded-md border border-border/50">
             {product.stone}
           </span>
-          <span className="px-2 py-0.5 bg-secondary text-[10px] text-secondary-foreground rounded-md">
+          <span className="px-2 py-0.5 bg-secondary text-[10px] text-secondary-foreground rounded-md border border-border/50">
             {product.style}
           </span>
         </div>
