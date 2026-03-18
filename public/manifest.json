@@ -1,6 +1,6 @@
 {
-  "name": "Crown Gems- Premium Jewelry Marketplace",
-  "short_name": "GemsLink",
+  "name": "Crown Gems - Premium Gems & Jewelry Marketplace",
+  "short_name": "Crown Gems",
   "description": "Discover extraordinary gemstones and handcrafted jewelry from verified sellers worldwide. Connect directly with trusted jewelers.",
   "start_url": "/",
   "display": "standalone",
@@ -9,30 +9,46 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
+  "categories": ["shopping", "lifestyle", "business"],
   "icons": [
     {
       "src": "/AppIcon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/CGLogo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
-  "prefer_related_applications": false
-}
-      {
-        "src": "/AppIcon.png",
-        "sizes": "512x512",
-        "type": "image/png"
-      },
-      {
-        "src": "/CGLogo.png",
-        "sizes": "192x192",
-        "type": "image/png"
-      }
-    ],
+  "shortcuts": [
+    {
+      "name": "Shop Collection",
+      "short_name": "Shop",
+      "description": "Browse our jewelry collection",
+      "url": "/shop"
+    },
+    {
+      "name": "Saved Items",
+      "short_name": "Saved",
+      "description": "View your saved items",
+      "url": "/saved"
+    },
+    {
+      "name": "Find Sellers",
+      "short_name": "Sellers",
+      "description": "Browse verified jewelers",
+      "url": "/sellers"
+    }
+  ],
   "prefer_related_applications": false
 }
