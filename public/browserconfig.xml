@@ -2,11 +2,9 @@
 <browserconfig>
   <msapplication>
     <tile>
-      <square150x150logo src="/favicon.png"/>
+      <square150x150logo src="/CGLogo.png"/>
+      <square310x310logo src="/AppIcon.png"/>
       <TileColor>#9A7B4F</TileColor>
     </tile>
-    <notification>
-      <src>/AppIcon.png</src>
-    </notification>
   </msapplication>
 </browserconfig>

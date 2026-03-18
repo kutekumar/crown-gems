@@ -1,8 +1,6 @@
-/// <reference lib="webworker" />
-
-const CACHE_NAME = 'gemslink-v1';
-const STATIC_CACHE_NAME = 'gemslink-static-v1';
-const DYNAMIC_CACHE_NAME = 'gemslink-dynamic-v1';
+const CACHE_NAME = 'crown-gems-v1';
+const STATIC_CACHE_NAME = 'crown-gems-static-v1';
+const DYNAMIC_CACHE_NAME = 'crown-gems-dynamic-v1';
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
@@ -10,8 +8,7 @@ const STATIC_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/AppIcon.png',
-  '/favicon.png',
-  '/favicon.ico',
+  '/CGLogo.png',
   '/apple-touch-icon.png',
 ];
 
@@ -21,6 +18,8 @@ self.addEventListener('install', (event) => {
     caches.open(STATIC_CACHE_NAME).then((cache) => {
       console.log('[Service Worker] Caching static assets');
       return cache.addAll(STATIC_ASSETS);
+    }).catch((error) => {
+      console.error('[Service Worker] Failed to cache:', error);
     })
   );
   self.skipWaiting();
@@ -65,7 +64,6 @@ self.addEventListener('fetch', (event) => {
       url.hostname.includes('lovable')) {
     event.respondWith(
       fetch(request).catch(() => {
-        // Return offline fallback for API calls if needed
         return new Response(
           JSON.stringify({ error: 'Offline', message: 'Please check your connection' }),
           { 
@@ -83,7 +81,6 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Cache successful responses
           if (response.status === 200) {
             const responseClone = response.clone();
             caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
@@ -111,7 +108,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) {
-          // Return cached version and update cache in background
+          // Update cache in background
           fetch(request)
             .then((response) => {
               if (response.status === 200) {
@@ -124,7 +121,6 @@ self.addEventListener('fetch', (event) => {
           return cachedResponse;
         }
 
-        // Not in cache, fetch from network
         return fetch(request).then((response) => {
           if (response.status === 200) {
             const responseClone = response.clone();
@@ -157,7 +153,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Handle push notifications (for future use)
+// Handle push notifications
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
@@ -165,19 +161,15 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || 'New update available',
     icon: '/AppIcon.png',
-    badge: '/favicon.png',
+    badge: '/CGLogo.png',
     vibrate: [100, 50, 100],
     data: {
       url: data.url || '/',
     },
-    actions: [
-      { action: 'open', title: 'Open' },
-      { action: 'close', title: 'Close' },
-    ],
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'GemsLink', options)
+    self.registration.showNotification(data.title || 'Crown Gems', options)
   );
 });
 
@@ -185,31 +177,17 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  if (event.action === 'open' || !event.action) {
-    const url = event.notification.data?.url || '/';
-    event.waitUntil(
-      clients.matchAll({ type: 'window' }).then((clientList) => {
-        // Check if already open
-        for (const client of clientList) {
-          if (client.url === url && 'focus' in client) {
-            return client.focus();
-          }
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url === url && 'focus' in client) {
+          return client.focus();
         }
-        // Open new window
-        if (clients.openWindow) {
-          return clients.openWindow(url);
-        }
-      })
-    );
-  }
-});
-
-// Background sync for offline actions (future use)
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-saved-items') {
-    event.waitUntil(
-      // Sync saved items when back online
-      console.log('[Service Worker] Syncing saved items...')
-    );
-  }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
+    })
+  );
 });
